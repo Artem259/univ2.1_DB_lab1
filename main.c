@@ -7,12 +7,12 @@
 _Bool get_free_index(char file_name[], size_t *result)
 {
     FILE *old_free = fopen(file_name,"ab+");
-    FILE *new_free = fopen("TEMP_free.bin","ab+");
     size_t current;
     if(!fread(result, sizeof(*result), 1, old_free))
     {
         return 0;
     }
+    FILE *new_free = fopen("TEMP_free.bin","ab+");
     while(fread(&current, sizeof(current), 1, old_free))
     {
         fwrite(&current, sizeof(current), 1, new_free);
@@ -52,6 +52,7 @@ void insert_m(struct observatory *input)
     {
         // свободных ячеек нет - запись в конец
         fseek(obs_file, 0, SEEK_END);
+        index = filelength(fileno(obs_file)) / sizeof(struct observatory);
     }
     //-----------------------------------------------------------------------------------//
     // запись данных в OBSERVATORIES.bin
@@ -75,27 +76,39 @@ _Bool get_m(size_t id, size_t *output_index, struct observatory *output_struct)
     size_t current;
     //-----------------------------------------------------------------------------------//
     // бинарный поиск по index.bin
-    while(left <= right)
+    while(1)
     {
         current = (left+right)/2;
         fseek(index_file, (long)(current*sizeof(struct index_structure)), SEEK_SET);
         fread(&curr_struct, sizeof(struct index_structure), 1, index_file);
-        if(curr_struct.id > id)
+        if(curr_struct.id != id)
         {
-            right = current;
-        }
-        else if(curr_struct.id < id)
-        {
-            left = current;
+            if(left == right)
+            {
+                fclose(index_file);
+                return 0; //не найдено
+            }
+            if(curr_struct.id > id)
+            {
+                right = current;
+            }
+            else
+            {
+                if(left+1 == right)
+                {
+                    fclose(index_file);
+                    return 0; //не найдено
+                }
+                left = current;
+            }
         }
         else
         {
-            // найдено
-            break;
+            break; // найдено
         }
     }
-    fclose(index_file);
-    if(left>right) return 0; //не найдено
+    //-----------------------------------------------------------------------------------//
+    if(curr_struct.is_removed) return 0; // запись была удалена
     //-----------------------------------------------------------------------------------//
     // получение и возврат нужной записи из OBSERVATORIES.bin (output_struct), а также ее индекса в файле (output_index)
     FILE *obs_file = fopen("OBSERVATORIES.bin","ab+");
@@ -131,7 +144,37 @@ int DB_Terminal()
 
 int main()
 {
-    DB_Terminal();
+        struct observatory obs0 = {100, "Obs1", 10,10};
+        struct observatory obs1 = {100, "Obs2", 10,10};
+        struct observatory obs2 = {100, "Obs3", 10,10};
+        struct observatory obs3 = {100, "Obs4", 10,10};
+        struct observatory obs4 = {100, "Obs5", 10,10};
+        struct observatory obs5 = {100, "Obs6", 10,10};
+    insert_m(&obs0);
+    insert_m(&obs1);
+    insert_m(&obs2);
+    insert_m(&obs3);
+    insert_m(&obs4);
+    insert_m(&obs5);
+
+        size_t output_index;
+        struct observatory output_struct;
+    printf("0: %i(1)\n",get_m(0, &output_index, &output_struct));
+    printf("   index: %zu\n   name: %s\n", output_index, output_struct.name);
+    printf("1: %i(1)\n",get_m(1, &output_index, &output_struct));
+    printf("   index: %zu\n   name: %s\n", output_index, output_struct.name);
+    printf("2: %i(1)\n",get_m(2, &output_index, &output_struct));
+    printf("   index: %zu\n   name: %s\n", output_index, output_struct.name);
+    printf("3: %i(1)\n",get_m(3, &output_index, &output_struct));
+    printf("   index: %zu\n   name: %s\n", output_index, output_struct.name);
+    printf("4: %i(1)\n",get_m(4, &output_index, &output_struct));
+    printf("   index: %zu\n   name: %s\n", output_index, output_struct.name);
+    printf("5: %i(1)\n",get_m(5, &output_index, &output_struct));
+    printf("   index: %zu\n   name: %s\n", output_index, output_struct.name);
+    printf("6: %i(0)\n",get_m(6, &output_index, &output_struct));
+    printf("   index: %zu\n   name: %s\n", output_index, output_struct.name);
+    printf("100500: %i(0)\n",get_m(100500, &output_index, &output_struct));
+    system("pause");
     return 0;
 }
 
