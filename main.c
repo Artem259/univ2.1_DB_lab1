@@ -26,6 +26,7 @@ _Bool get_free_index(char file_name[], size_t *result)
 
 void insert_m(struct observatory *input)
 {
+    (*input).telescopes = 0; // при создании обсерватории, в ней нет телескопов
     FILE *obs_file = fopen("OBSERVATORIES.bin","ab+");
     FILE *index_file = fopen("index.bin","ab+");
     //-----------------------------------------------------------------------------------//

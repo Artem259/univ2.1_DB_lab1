@@ -8,6 +8,7 @@ struct observatory
     float latitude; // широта (-90 south; 90 north)
     float longitude; // долгота (-180 west; 180 east)
 
+    _Bool telescopes;
     size_t telescope_index;
 };
 struct index_structure
