@@ -11,13 +11,12 @@ struct observatory
     size_t telescopes; // количество телескопов
 
     size_t telescope_index;
+    _Bool is_removed;
 };
 struct index_structure
 {
     size_t id; // ключ
     size_t index; // позиция в файле
-
-    _Bool is_removed;
 };
 struct telescope
 {

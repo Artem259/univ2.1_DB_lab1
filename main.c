@@ -59,7 +59,7 @@ void insert_m(struct observatory *input)
     fwrite(input ,sizeof(struct observatory), 1, obs_file);
     //-----------------------------------------------------------------------------------//
     // установка указателя в конце index.bin, запись данных о новом элементе
-    struct index_structure curr_index = {(*input).id, index, 0};
+    struct index_structure curr_index = {(*input).id, index};
     fseek(index_file, 0, SEEK_END);
     fwrite(&curr_index, sizeof(struct index_structure), 1, index_file);
     //-----------------------------------------------------------------------------------//
@@ -107,14 +107,15 @@ _Bool get_m(size_t id, size_t *output_index, struct observatory *output_struct)
         }
     }
     //-----------------------------------------------------------------------------------//
-    if(curr_struct.is_removed) return 0; // запись была удалена
-    //-----------------------------------------------------------------------------------//
     // получение и возврат нужной записи из OBSERVATORIES.bin (output_struct), а также ее индекса в файле (output_index)
     FILE *obs_file = fopen("OBSERVATORIES.bin","rb+");
     fseek(obs_file, (long)(curr_struct.index*sizeof(struct observatory)), SEEK_SET);
     fread(output_struct, sizeof(struct observatory), 1, obs_file);
     fclose(obs_file);
     *output_index=curr_struct.index;
+    //-----------------------------------------------------------------------------------//
+    if((*output_struct).is_removed) return 0; // запись была удалена
+    //-----------------------------------------------------------------------------------//
     return 1;
 }
 _Bool insert_s(size_t id, struct telescope *input)
@@ -181,6 +182,46 @@ _Bool insert_s(size_t id, struct telescope *input)
     //-----------------------------------------------------------------------------------//
     return 1;
 }
+_Bool del_m(size_t id)
+{
+    size_t obs_index;
+    struct observatory obs_struct;
+    //-----------------------------------------------------------------------------------//
+    // проверка на существование обсерватории
+    if(!get_m(id, &obs_index, &obs_struct))
+    {
+        return 0; // нет обсерватории - нечего удалять
+    }
+    //-----------------------------------------------------------------------------------//
+    // удаление телескопов
+    FILE *tel_file = fopen("TELESCOPES.bin","rb+");
+    FILE *free_tel_file = fopen("free_TEL.bin","ab+");
+    struct telescope curr_tel;
+    size_t tel_index = obs_struct.telescope_index;
+    for(size_t i=0 ; i<obs_struct.telescopes ; i++)
+    {
+        fwrite(&tel_index, sizeof(tel_index), 1, free_tel_file); // запись индексов удаляемых телескопов в free_TEL.bin
+        fseek(tel_file, (long)(tel_index*sizeof(struct telescope)), SEEK_SET);
+        fread(&curr_tel, sizeof(struct telescope), 1, tel_file);
+        tel_index = curr_tel.next_telescope;
+    }
+    fclose(tel_file);
+    fclose(free_tel_file);
+    //-----------------------------------------------------------------------------------//
+    // перезапись в OBSERVATORIES.bin с меткой удаления
+    obs_struct.is_removed = 1;
+    FILE *obs_file = fopen("OBSERVATORIES.bin","rb+");
+    fseek(obs_file, (long)(obs_index*sizeof(struct observatory)), SEEK_SET);
+    fwrite(&obs_struct, sizeof(struct observatory), 1, obs_file);
+    fclose(obs_file);
+    //-----------------------------------------------------------------------------------//
+    // запись индекса удаляемой обсерватории в free_OBS.bin
+    FILE *free_obs_file = fopen("free_OBS.bin","ab+");
+    fwrite(&obs_index, sizeof(obs_index), 1, free_obs_file);
+    fclose(free_obs_file);
+    //-----------------------------------------------------------------------------------//
+    return 1;
+}
 
 void print_observatories()
 {
@@ -193,9 +234,9 @@ void print_observatories()
     printf("+----------+----------------------------------------+----------+-----------+----------+------------+\n");
     while(fread(&curr_index, sizeof(struct index_structure), 1, index_file))
     {
-        if(curr_index.is_removed) continue;
         fseek(obs_file, (long)(curr_index.index*sizeof(struct observatory)), SEEK_SET);
         fread(&curr_obs, sizeof(struct observatory), 1, obs_file);
+        if(curr_obs.is_removed) continue;
         printf("|%10zu|%40.40s|%10.4f|%11.4f|%10.1f|%12zu|\n",
                curr_obs.id, curr_obs.name, curr_obs.latitude, curr_obs.longitude, curr_obs.altitude, curr_obs.telescopes);
     }
@@ -241,6 +282,8 @@ void print_telescopes(size_t id)
     //-----------------------------------------------------------------------------------//
 }
 
+
+
 void Database()
 {
     //-----------------------------------------------------------------------------------//
@@ -265,7 +308,7 @@ void Database()
         }
         else if(!strcmp(str, "insert-m"))
         {
-            printf(" >> ")
+            printf(" >> ");
         }
         else
         {
@@ -276,8 +319,6 @@ void Database()
 
 int main()
 {
-    Database();
-    /*
     FILE *file;
     file = fopen("OBSERVATORIES.bin","ab+"); fclose(file);
     file = fopen("TELESCOPES.bin","ab+"); fclose(file);
@@ -285,6 +326,26 @@ int main()
     file = fopen("free_OBS.bin","ab+"); fclose(file);
     file = fopen("free_TEL.bin","ab+"); fclose(file);
 
+    struct observatory obs = {100, "Obs1", (float)1000.001,(float)1000.001, (float)1000.001};
+    struct telescope tel={100500, "tel", (float)2.222222,(float)2.222222,100500};
+
+
+    insert_s(1, &tel);
+    /*insert_m(&obs);
+    insert_m(&obs);
+    insert_s(1, &tel);
+    insert_s(1, &tel);
+    insert_s(1, &tel);
+    insert_s(1, &tel);
+    insert_s(2, &tel);
+    insert_s(2, &tel);
+    printf("%i\n",del_m(1));
+    print_observatories();
+    print_telescopes(0);
+    print_telescopes(1);
+    print_telescopes(2);*/
+
+    /*Database();
     struct observatory obs0 = {100, "Obs1", 10,10, 10};
     struct observatory obs1 = {100, "Obs2", 10,10, 10.2};
     struct observatory obs2 = {100, "Obs3", 10,10, 10};
