@@ -317,6 +317,53 @@ int del_s(size_t obs_id, size_t tel_id)
     fclose(tel_file);
     return 0;
 }
+_Bool update_m(size_t id, struct observatory *input)
+{
+    size_t obs_index;
+    struct observatory obs_struct;
+    //-----------------------------------------------------------------------------------//
+    // проверка на существование обсерватории
+    if(!get_m(id, &obs_index, &obs_struct))
+    {
+        return 0; // нет обсерватории - нечего редактировать
+    }
+    //-----------------------------------------------------------------------------------//
+    // копирование служебных(неизменяемых) полей в новую структуру
+    (*input).id = obs_struct.id;
+    (*input).telescopes = obs_struct.telescopes;
+    (*input).telescope_index = obs_struct.telescope_index;
+    (*input).is_removed = 0;
+    //-----------------------------------------------------------------------------------//
+    // запись обновленных данных в OBSERVATORIES.bin
+    FILE *obs_file = fopen("OBSERVATORIES.bin","rb+");
+    fseek(obs_file, (long)(obs_index*sizeof(struct observatory)), SEEK_SET);
+    fwrite(input, sizeof(struct observatory), 1, obs_file);
+    fclose(obs_file);
+    //-----------------------------------------------------------------------------------//
+    return 1;
+}
+int update_s(size_t obs_id, size_t tel_id, struct telescope *input)
+{
+    size_t tel_index;
+    struct telescope tel_struct;
+    //-----------------------------------------------------------------------------------//
+    // проверка на существование обсерватории и телескопа в ней
+    int status = get_s(obs_id, tel_id, &tel_index, &tel_struct);
+    if(status == -1) return -1; // нет указанной обсерватории
+    else if(status == 0) return 0; // в обсерватории нет указанного телескопа
+    //-----------------------------------------------------------------------------------//
+    // копирование служебных(неизменяемых) полей в новую структуру
+    (*input).id = tel_struct.id;
+    (*input).next_telescope = tel_struct.next_telescope;
+    //-----------------------------------------------------------------------------------//
+    // запись обновленных данных в TELESCOPES.bin
+    FILE *tel_file = fopen("TELESCOPES.bin","rb+");
+    fseek(tel_file, (long)(tel_index*sizeof(struct telescope)), SEEK_SET);
+    fwrite(input, sizeof(struct telescope), 1, tel_file);
+    fclose(tel_file);
+    //-----------------------------------------------------------------------------------//
+    return 1;
+}
 
 void print_observatories()
 {
