@@ -4,11 +4,12 @@
 struct observatory
 {
     size_t id; // KEY
-    char name[64];
+    char name[40];
     float latitude; // широта (-90 south; 90 north)
     float longitude; // долгота (-180 west; 180 east)
+    float altitude; // высота
+    size_t telescopes; // количество телескопов
 
-    _Bool telescopes;
     size_t telescope_index;
 };
 struct index_structure
@@ -20,8 +21,8 @@ struct index_structure
 };
 struct telescope
 {
-    long auto_id; // KEY
-    char name[64];
+    size_t id; // KEY
+    char name[40];
     float diameter;
     float focal_length;
 
