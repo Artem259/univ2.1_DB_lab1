@@ -10,8 +10,8 @@ struct observatory
     float altitude; // высота
     size_t telescopes; // количество телескопов
 
-    size_t telescope_index;
-    _Bool is_removed;
+    size_t telescope_index; // индекс первого телескопа
+    _Bool is_removed; // удален?
 };
 struct index_structure
 {
