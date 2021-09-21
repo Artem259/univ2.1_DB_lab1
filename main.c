@@ -446,7 +446,7 @@ void reorganise_database()
     //-----------------------------------------------------------------------------------//
 }
 
-void print_observatories()
+void print_m()
 {
     FILE *obs_file = fopen("OBSERVATORIES.bin","rb+");
     FILE *index_file = fopen("index.bin","rb+");
@@ -467,7 +467,7 @@ void print_observatories()
     fclose(obs_file);
     fclose(index_file);
 }
-void print_telescopes(size_t id)
+void print_s(size_t id)
 {
     size_t obs_index;
     struct observatory obs_struct;
@@ -575,13 +575,13 @@ int main()
     insert_s(3, &tel0);
 
     reorganise_database();
-    print_observatories();
+    print_m();
     printf("-------------------------------------------------------------------------------------------------");
-    print_telescopes(0);
-    print_telescopes(1);
-    print_telescopes(2);
-    print_telescopes(3);
-    print_telescopes(4);
+    print_s(0);
+    print_s(1);
+    print_s(2);
+    print_s(3);
+    print_s(4);
 
 
     /*
