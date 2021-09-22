@@ -10,13 +10,17 @@ _Bool get_m(size_t id, size_t *output_index, struct observatory *output_struct);
 int get_s(size_t obs_id, size_t tel_id, size_t *output_index, struct telescope *output_struct);
 void insert_m(struct observatory *input);
 _Bool insert_s(size_t id, struct telescope *input);
-_Bool del_m(size_t id);
+_Bool del_m(size_t id, size_t *tel_count);
 int del_s(size_t obs_id, size_t tel_id);
 _Bool update_m(size_t id, struct observatory *input);
 int update_s(size_t obs_id, size_t tel_id, struct telescope *input);
-void reorganise_database();
-void print_m();
-void print_s(size_t id);
+void reorganise_database(size_t *output_free_obs, size_t *output_free_tel);
+void show_m();
+void show_s(size_t id);
+
+_Bool get_size_t(size_t *output);
+void UI_help();
+
 void Database();
 
 #endif

@@ -22,8 +22,8 @@ struct telescope
 {
     size_t id; // KEY
     char name[40];
-    float diameter;
-    float focal_length;
+    float diameter; // (>0)
+    float focal_length; // (>0)
 
     size_t next_telescope;
 };
