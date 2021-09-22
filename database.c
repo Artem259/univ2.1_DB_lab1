@@ -136,6 +136,7 @@ void insert_m(struct observatory *input)
     }
     //-----------------------------------------------------------------------------------//
     // запись данных в OBSERVATORIES.bin
+    (*input).is_removed = 0;
     fwrite(input ,sizeof(struct observatory), 1, obs_file);
     //-----------------------------------------------------------------------------------//
     // установка указателя в конце index.bin, запись данных о новом элементе
@@ -512,16 +513,18 @@ void show_s(size_t id)
 
 _Bool get_size_t(size_t *output)
 {
-    if(!scanf("%zu",output)) return 0;
+    _Bool status = scanf("%zu", output);
     int c;
     while ((c = getchar()) != EOF && c != '\n');
+    if(!status) return 0;
     return 1;
 }
 _Bool get_float(float *output)
 {
-    if(!scanf("%f",output)) return 0;
+    _Bool status = scanf("%f", output);
     int c;
     while ((c = getchar()) != EOF && c != '\n');
+    if(!status) return 0;
     return 1;
 }
 void UI_help()
@@ -537,11 +540,11 @@ void UI_help()
 void UI_get_m()
 {
     size_t obs_id, obs_index;
-    printf(" Enter observatory ID >> ");
+    printf(" -- Enter observatory ID >> ");
     while(!get_size_t(&obs_id))
     {
         printf(" Error! Invalid input.\n\n");
-        printf(" Enter observatory ID >> ");
+        printf(" -- Enter observatory ID >> ");
     }
     struct observatory obs_struct;
     if(!get_m(obs_id, &obs_index, &obs_struct))
@@ -559,17 +562,17 @@ void UI_get_m()
 void UI_get_s()
 {
     size_t obs_id, tel_id, tel_index;
-    printf(" Enter observatory ID >> ");
+    printf(" -- Enter observatory ID >> ");
     while(!get_size_t(&obs_id))
     {
         printf(" Error! Invalid input.\n\n");
-        printf(" Enter observatory ID >> ");
+        printf(" -- Enter observatory ID >> ");
     }
-    printf(" Enter telescope ID >> ");
+    printf(" -- Enter telescope ID >> ");
     while(!get_size_t(&tel_id))
     {
         printf(" Error! Invalid input.\n\n");
-        printf(" Enter telescope ID >> ");
+        printf(" -- Enter telescope ID >> ");
     }
     struct telescope tel_struct;
     int status = get_s(obs_id, tel_id, &tel_index, &tel_struct);
@@ -591,11 +594,11 @@ void UI_get_s()
 void UI_del_m()
 {
     size_t obs_id;
-    printf(" Enter observatory ID >> ");
+    printf(" -- Enter observatory ID >> ");
     while(!get_size_t(&obs_id))
     {
         printf(" Error! Invalid input.\n\n");
-        printf(" Enter observatory ID >> ");
+        printf(" -- Enter observatory ID >> ");
     }
     size_t tel_count;
     if(!del_m(obs_id, &tel_count))
@@ -610,17 +613,17 @@ void UI_del_m()
 void UI_del_s()
 {
     size_t obs_id, tel_id, tel_index;
-    printf(" Enter observatory ID >> ");
+    printf(" -- Enter observatory ID >> ");
     while(!get_size_t(&obs_id))
     {
         printf(" Error! Invalid input.\n\n");
-        printf(" Enter observatory ID >> ");
+        printf(" -- Enter observatory ID >> ");
     }
-    printf(" Enter telescope ID >> ");
+    printf(" -- Enter telescope ID >> ");
     while(!get_size_t(&tel_id))
     {
         printf(" Error! Invalid input.\n\n");
-        printf(" Enter telescope ID >> ");
+        printf(" -- Enter telescope ID >> ");
     }
     int status = del_s(obs_id, tel_id);
     if(status == -1)
@@ -643,11 +646,11 @@ void UI_show_m()
 void UI_show_s()
 {
     size_t obs_id;
-    printf(" Enter observatory ID >> ");
+    printf(" -- Enter observatory ID >> ");
     while(!get_size_t(&obs_id))
     {
         printf(" Error! Invalid input.\n\n");
-        printf(" Enter observatory ID >> ");
+        printf(" -- Enter observatory ID >> ");
     }
     show_s(obs_id);
     printf("\n");
@@ -658,14 +661,14 @@ void UI_insert_m()
     struct observatory obs_struct;
     //-----------------------------------------------------------------------------------//
     // название
-    printf(" Enter observatory Name >> ");
+    printf(" -- Enter observatory Name >> ");
     scanf("%s", obs_struct.name);
     while ((c = getchar()) != EOF && c != '\n');
     //-----------------------------------------------------------------------------------//
     // широта (-90 south; 90 north)
     while(1)
     {
-        printf(" Enter observatory Latitude >> ");
+        printf(" -- Enter observatory Latitude >> ");
         if(!get_float(&obs_struct.latitude))
         {
             printf(" Error! Invalid input.\n\n");
@@ -680,7 +683,7 @@ void UI_insert_m()
     // долгота (-180 west; 180 east)
     while(1)
     {
-        printf(" Enter observatory Longitude >> ");
+        printf(" -- Enter observatory Longitude >> ");
         if(!get_float(&obs_struct.longitude))
         {
             printf(" Error! Invalid input.\n\n");
@@ -695,7 +698,7 @@ void UI_insert_m()
     // высота
     while(1)
     {
-        printf(" Enter observatory Altitude >> ");
+        printf(" -- Enter observatory Altitude >> ");
         if(!get_float(&obs_struct.altitude))
         {
             printf(" Error! Invalid input.\n\n");
@@ -715,22 +718,22 @@ void UI_insert_s()
     struct telescope tel_struct;
     //-----------------------------------------------------------------------------------//
     // id обсерватории
-    printf(" Enter telescope Observatory ID >> ");
+    printf(" -- Enter telescope Observatory ID >> ");
     while(!get_size_t(&obs_id))
     {
         printf(" Error! Invalid input.\n\n");
-        printf(" Enter telescope Observatory ID >> ");
+        printf(" -- Enter telescope Observatory ID >> ");
     }
     //-----------------------------------------------------------------------------------//
     // название
-        printf(" Enter telescope Name >> ");
+        printf(" -- Enter telescope Name >> ");
         scanf("%s", tel_struct.name);
         while ((c = getchar()) != EOF && c != '\n');
     //-----------------------------------------------------------------------------------//
     // диаметр (>0)
     while(1)
     {
-        printf(" Enter telescope Diameter >> ");
+        printf(" -- Enter telescope Diameter >> ");
         if(!get_float(&tel_struct.diameter))
         {
             printf(" Error! Invalid input.\n\n");
@@ -745,7 +748,7 @@ void UI_insert_s()
     // фокус (>0)
     while(1)
     {
-        printf(" Enter telescope Focal length >> ");
+        printf(" -- Enter telescope Focal length >> ");
         if(!get_float(&tel_struct.focal_length))
         {
             printf(" Error! Invalid input.\n\n");
@@ -772,11 +775,11 @@ void UI_update_m()
 {
     int c;
     size_t obs_id, obs_index;
-    printf(" Enter observatory ID >> ");
+    printf(" -- Enter observatory ID >> ");
     while(!get_size_t(&obs_id))
     {
         printf(" Error! Invalid input.\n\n");
-        printf(" Enter observatory ID >> ");
+        printf(" -- Enter observatory ID >> ");
     }
     struct observatory obs_struct;
     if(!get_m(obs_id, &obs_index, &obs_struct))
@@ -794,14 +797,14 @@ void UI_update_m()
     printf(" Current Telescopes: %zu\n\n", obs_struct.telescopes);
     //-----------------------------------------------------------------------------------//
     // новое название
-    printf(" Enter new observatory Name >> ");
+    printf(" -- Enter new observatory Name >> ");
     scanf("%s", obs_struct.name);
     while ((c = getchar()) != EOF && c != '\n');
     //-----------------------------------------------------------------------------------//
     // новая широта (-90 south; 90 north)
     while(1)
     {
-        printf(" Enter new observatory Latitude >> ");
+        printf(" -- Enter new observatory Latitude >> ");
         if(!get_float(&obs_struct.latitude))
         {
             printf(" Error! Invalid input.\n\n");
@@ -816,7 +819,7 @@ void UI_update_m()
     // новая долгота (-180 west; 180 east)
     while(1)
     {
-        printf(" Enter new observatory Longitude >> ");
+        printf(" -- Enter new observatory Longitude >> ");
         if(!get_float(&obs_struct.longitude))
         {
             printf(" Error! Invalid input.\n\n");
@@ -831,7 +834,7 @@ void UI_update_m()
     // новая высота
     while(1)
     {
-        printf(" Enter new observatory Altitude >> ");
+        printf(" -- Enter new observatory Altitude >> ");
         if(!get_float(&obs_struct.altitude))
         {
             printf(" Error! Invalid input.\n\n");
@@ -845,7 +848,75 @@ void UI_update_m()
 }
 void UI_update_s()
 {
-
+    int c;
+    size_t obs_id, tel_id, tel_index;
+    printf(" -- Enter observatory ID >> ");
+    while(!get_size_t(&obs_id))
+    {
+        printf(" Error! Invalid input.\n\n");
+        printf(" -- Enter observatory ID >> ");
+    }
+    printf(" -- Enter telescope ID >> ");
+    while(!get_size_t(&tel_id))
+    {
+        printf(" Error! Invalid input.\n\n");
+        printf(" -- Enter telescope ID >> ");
+    }
+    struct telescope tel_struct;
+    int status = get_s(obs_id, tel_id, &tel_index, &tel_struct);
+    if(status == -1)
+    {
+        printf(" Error! There is no observatory %zu in database.\n\n", obs_id);
+        return;
+    }
+    else if(status == 1)
+    {
+        printf(" Error! There is no telescope %zu at observatory %zu.\n\n", tel_id, obs_id);
+        return;
+    }
+    printf(" TELESCOPE %zu AT OBSERVATORY %zu CURRENT INFO:\n", tel_id, obs_id);
+    printf(" Current Name: %s\n", tel_struct.name);
+    printf(" Current Diameter: %f\n", tel_struct.diameter);
+    printf(" Current Focal length: %f\n\n", tel_struct.focal_length);
+    //-----------------------------------------------------------------------------------//
+    // название
+    printf(" -- Enter new telescope Name >> ");
+    scanf("%s", tel_struct.name);
+    while ((c = getchar()) != EOF && c != '\n');
+    //-----------------------------------------------------------------------------------//
+    // диаметр (>0)
+    while(1)
+    {
+        printf(" -- Enter new telescope Diameter >> ");
+        if(!get_float(&tel_struct.diameter))
+        {
+            printf(" Error! Invalid input.\n\n");
+        }
+        else if(tel_struct.diameter<=0)
+        {
+            printf(" Error! The input value must be positive.\n\n");
+        }
+        else break;
+    }
+    //-----------------------------------------------------------------------------------//
+    // фокус (>0)
+    while(1)
+    {
+        printf(" -- Enter new telescope Focal length >> ");
+        if(!get_float(&tel_struct.focal_length))
+        {
+            printf(" Error! Invalid input.\n\n");
+        }
+        else if(tel_struct.focal_length<=0)
+        {
+            printf(" Error! The input value must be positive.\n\n");
+        }
+        else break;
+    }
+    //-----------------------------------------------------------------------------------//
+    update_s(obs_id, tel_id, &tel_struct);
+    printf(" Done.\n");
+    printf(" The telescope has been updated.\n\n");
 }
 void UI_reorganise_database()
 {
@@ -868,12 +939,14 @@ void Database()
     file = fopen("files/free_TEL.bin","ab+"); fclose(file);
     //-----------------------------------------------------------------------------------//
     char str[64] = "";
+    int c;
     printf("~~~ Database terminal ~~~\n");
     printf("Use \"help\" to see the list of commands.\n\n");
     while(1)
     {
         printf(" >> ");
         scanf("%s", str);
+        while ((c = getchar()) != EOF && c != '\n');
 
         if(!strcmp(str, "close")) break;
         else if(!strcmp(str, "help")) UI_help();
@@ -888,6 +961,6 @@ void Database()
         else if(!strcmp(str, "update-m")) UI_update_m();
         else if(!strcmp(str, "update-s")) UI_update_s();
         else if(!strcmp(str, "reorganise")) UI_reorganise_database();
-        else printf(" >> Unknown command. See \"help\".\n");
+        else printf(" Unknown command. See \"help\".\n\n");
     }
 }

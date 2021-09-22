@@ -19,7 +19,19 @@ void show_m();
 void show_s(size_t id);
 
 _Bool get_size_t(size_t *output);
+_Bool get_float(float *output);
 void UI_help();
+void UI_get_m();
+void UI_get_s();
+void UI_del_m();
+void UI_del_s();
+void UI_show_m();
+void UI_show_s();
+void UI_insert_m();
+void UI_insert_s();
+void UI_update_m();
+void UI_update_s();
+void UI_reorganise_database();
 
 void Database();
 
