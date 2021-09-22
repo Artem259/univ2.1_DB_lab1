@@ -17,6 +17,8 @@ struct index_structure
 {
     size_t id; // ключ
     size_t index; // позиция в файле
+
+    _Bool is_removed; // удален? (копия из observatory)
 };
 struct telescope
 {

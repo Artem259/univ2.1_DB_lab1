@@ -6,7 +6,8 @@
 #define DATABASE_H
 
 _Bool get_free_index(char file_name[], size_t *result);
-_Bool get_m(size_t id, size_t *output_index, struct observatory *output_struct);
+_Bool get_index_index(size_t id, size_t *output_index_index, size_t *output_obs_index);
+_Bool get_m(size_t id, size_t *output_obs_index, size_t *output_index_index, struct observatory *output_struct);
 int get_s(size_t obs_id, size_t tel_id, size_t *output_index, struct telescope *output_struct);
 void insert_m(struct observatory *input);
 _Bool insert_s(size_t id, struct telescope *input);

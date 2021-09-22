@@ -20,7 +20,7 @@ _Bool get_free_index(char file_name[], size_t *result)
     rename("files/TEMP_free.bin", file_name);
     return 1;
 }
-_Bool get_m(size_t id, size_t *output_index, struct observatory *output_struct)
+_Bool get_index_index(size_t id, size_t *output_index_index, size_t *output_obs_index)
 {
     struct index_structure curr_struct;
     FILE *index_file = fopen("files/index.bin","rb+");
@@ -61,23 +61,31 @@ _Bool get_m(size_t id, size_t *output_index, struct observatory *output_struct)
         }
     }
     fclose(index_file);
+    if(curr_struct.is_removed) return 0; // запись была удалена
+    *output_index_index = current;
+    *output_obs_index = curr_struct.index;
+    return 1;
+}
+_Bool get_m(size_t id, size_t *output_obs_index, size_t *output_index_index, struct observatory *output_struct)
+{
+    size_t index_index, obs_index;
+    if(!get_index_index(id, &index_index, &obs_index)) return 0;
     //-----------------------------------------------------------------------------------//
     // получение и возврат нужной записи из OBSERVATORIES.bin (output_struct), а также ее индекса в файле (output_index)
     FILE *obs_file = fopen("files/OBSERVATORIES.bin","rb+");
-    fseek(obs_file, (long)(curr_struct.index*sizeof(struct observatory)), SEEK_SET);
+    fseek(obs_file, (long)(obs_index*sizeof(struct observatory)), SEEK_SET);
     fread(output_struct, sizeof(struct observatory), 1, obs_file);
     fclose(obs_file);
-    *output_index=curr_struct.index;
-    //-----------------------------------------------------------------------------------//
-    if((*output_struct).is_removed) return 0; // запись была удалена
+    *output_obs_index = obs_index;
+    *output_index_index = index_index;
     //-----------------------------------------------------------------------------------//
     return 1;
 }
 int get_s(size_t obs_id, size_t tel_id, size_t *output_index, struct telescope *output_struct)
 {
-    size_t obs_index;
+    size_t obs_index, index_index;
     struct observatory obs_struct;
-    if(!get_m(obs_id, &obs_index, &obs_struct)) // нет обсерватории - нет телескопа
+    if(!get_m(obs_id, &obs_index, &index_index, &obs_struct)) // нет обсерватории - нет телескопа
     {
         return -1;
     }
@@ -140,7 +148,7 @@ void insert_m(struct observatory *input)
     fwrite(input ,sizeof(struct observatory), 1, obs_file);
     //-----------------------------------------------------------------------------------//
     // установка указателя в конце index.bin, запись данных о новом элементе
-    struct index_structure curr_index = {(*input).id, index};
+    struct index_structure curr_index = {(*input).id, index, 0};
     fseek(index_file, 0, SEEK_END);
     fwrite(&curr_index, sizeof(struct index_structure), 1, index_file);
     //-----------------------------------------------------------------------------------//
@@ -150,9 +158,9 @@ void insert_m(struct observatory *input)
 _Bool insert_s(size_t id, struct telescope *input)
 {
     (*input).next_telescope = 0;
-    size_t obs_index, tel_index;
+    size_t obs_index, index_index, tel_index;
     struct observatory obs_struct;
-    if(!get_m(id, &obs_index, &obs_struct)) // нет обсерватории - некуда добавлять телескоп
+    if(!get_m(id, &obs_index, &index_index, &obs_struct)) // нет обсерватории - некуда добавлять телескоп
     {
         return 0; //ошибка добавления
     }
@@ -213,11 +221,11 @@ _Bool insert_s(size_t id, struct telescope *input)
 }
 _Bool del_m(size_t id, size_t *tel_count)
 {
-    size_t obs_index;
+    size_t obs_index, index_index;
     struct observatory obs_struct;
     //-----------------------------------------------------------------------------------//
     // проверка на существование обсерватории
-    if(!get_m(id, &obs_index, &obs_struct))
+    if(!get_m(id, &obs_index, &index_index, &obs_struct))
     {
         *tel_count = 0;
         return 0; // нет обсерватории - нечего удалять
@@ -245,6 +253,16 @@ _Bool del_m(size_t id, size_t *tel_count)
     fwrite(&obs_struct, sizeof(struct observatory), 1, obs_file);
     fclose(obs_file);
     //-----------------------------------------------------------------------------------//
+    // перезапись в index.bin с меткой удаления
+    struct index_structure index_struct;
+    FILE *index_file = fopen("files/index.bin","rb+");
+    fseek(index_file, (long)(index_index*sizeof(struct index_structure)), SEEK_SET);
+    fread(&index_struct, sizeof(struct index_structure), 1, index_file);
+    index_struct.is_removed = 1;
+    fseek(index_file, (long)(index_index*sizeof(struct index_structure)), SEEK_SET);
+    fwrite(&index_struct, sizeof(struct index_structure), 1, index_file);
+    fclose(index_file);
+    //-----------------------------------------------------------------------------------//
     // запись индекса удаляемой обсерватории в free_OBS.bin
     FILE *free_obs_file = fopen("files/free_OBS.bin","ab+");
     fwrite(&obs_index, sizeof(obs_index), 1, free_obs_file);
@@ -255,11 +273,11 @@ _Bool del_m(size_t id, size_t *tel_count)
 }
 int del_s(size_t obs_id, size_t tel_id)
 {
-    size_t obs_index;
+    size_t obs_index, index_index;
     struct observatory obs_struct;
     //-----------------------------------------------------------------------------------//
     // проверка на существование обсерватории
-    if(!get_m(obs_id, &obs_index, &obs_struct))
+    if(!get_m(obs_id, &obs_index, &index_index, &obs_struct))
     {
         return -1; // нет обсерватории - нет телескопа для удаления
     }
@@ -319,11 +337,11 @@ int del_s(size_t obs_id, size_t tel_id)
 }
 _Bool update_m(size_t id, struct observatory *input)
 {
-    size_t obs_index;
+    size_t obs_index, index_index;
     struct observatory obs_struct;
     //-----------------------------------------------------------------------------------//
     // проверка на существование обсерватории
-    if(!get_m(id, &obs_index, &obs_struct))
+    if(!get_m(id, &obs_index, &index_index, &obs_struct))
     {
         return 0; // нет обсерватории - нечего редактировать
     }
@@ -383,11 +401,11 @@ void reorganise_database(size_t *output_free_obs, size_t *output_free_tel)
     struct index_structure curr_index;
     while(fread(&curr_index, sizeof(struct index_structure), 1, old_index_file))
     {
+        if(curr_index.is_removed) continue; // обсерватория "логически" удалена - дальнейшая запись пропускается
         //-----------------------------------------------------------------------------------//
         // чтение обсерватории из OBSERVATORIES.bin
         fseek(old_obs_file, (long)(curr_index.index*sizeof(struct observatory)), SEEK_SET);
         fread(&curr_obs, sizeof(struct observatory), 1, old_obs_file);
-        if(curr_obs.is_removed) continue; // обсерватория "логически" удалена - дальнейшая запись пропускается
         //-----------------------------------------------------------------------------------//
         // чтение и перезапись всех телескопов текущей обсерватории
         if(curr_obs.telescopes > 0)
@@ -462,11 +480,11 @@ void show_m()
     printf("+----------+----------------------------------------+----------+-----------+----------+------------+\n");
     while(fread(&curr_index, sizeof(struct index_structure), 1, index_file))
     {
+        if(curr_index.is_removed) continue;
         fseek(obs_file, (long)(curr_index.index*sizeof(struct observatory)), SEEK_SET);
         fread(&curr_obs, sizeof(struct observatory), 1, obs_file);
-        if(curr_obs.is_removed) continue;
-        printf("|%10zu|%40.40s|%10.4f|%11.4f|%10.1f|%12zu|\n",
-               curr_obs.id, curr_obs.name, curr_obs.latitude, curr_obs.longitude, curr_obs.altitude, curr_obs.telescopes);
+        printf("|%10zu|%40.40s|%10.4f|%11.4f|%10.1f|%12zu|%i\n",
+               curr_obs.id, curr_obs.name, curr_obs.latitude, curr_obs.longitude, curr_obs.altitude, curr_obs.telescopes, curr_obs.is_removed);
     }
     printf("+----------+----------------------------------------+----------+-----------+----------+------------+\n");
     fclose(obs_file);
@@ -474,21 +492,15 @@ void show_m()
 }
 void show_s(size_t id)
 {
-    size_t obs_index;
+    size_t obs_index, index_index;
     struct observatory obs_struct;
     //-----------------------------------------------------------------------------------//
     // проверка особых случаев
-    if(!get_m(id, &obs_index, &obs_struct)) // проверка на существование обсерватории
+    if(!get_m(id, &obs_index, &index_index, &obs_struct)) // проверка на существование обсерватории
     {
         printf(" Error! There is no observatory %zu in database.\n", id); // такой обсерватории уже/еще нет
         return;
     }
-    /*if(obs_struct.telescopes == 0)
-    {
-        printf(" Observatory %zu has no telescopes.\n", id); // в обсерватории нет телескопов
-        return;
-    }*/
-    //-----------------------------------------------------------------------------------//
     // вывод таблицы
     FILE *tel_file = fopen("files/TELESCOPES.bin","rb+");
     struct telescope curr_tel;
@@ -539,7 +551,7 @@ void UI_help()
 }
 void UI_get_m()
 {
-    size_t obs_id, obs_index;
+    size_t obs_id, obs_index, index_index;
     printf(" -- Enter observatory ID >> ");
     while(!get_size_t(&obs_id))
     {
@@ -547,17 +559,19 @@ void UI_get_m()
         printf(" -- Enter observatory ID >> ");
     }
     struct observatory obs_struct;
-    if(!get_m(obs_id, &obs_index, &obs_struct))
+    if(!get_m(obs_id, &obs_index, &index_index, &obs_struct))
     {
         printf(" There is no observatory %zu in database.\n\n", obs_id);
         return;
     }
+    printf("-----------------------------------\n");
     printf(" OBSERVATORY %zu INFO:\n", obs_id);
     printf(" Name: %s\n", obs_struct.name);
     printf(" Latitude: %f\n", obs_struct.latitude);
     printf(" Longitude: %f\n", obs_struct.longitude);
     printf(" Altitude: %f\n", obs_struct.altitude);
-    printf(" Telescopes: %zu\n\n", obs_struct.telescopes);
+    printf(" Telescopes: %zu\n", obs_struct.telescopes);
+    printf("-----------------------------------\n\n");
 }
 void UI_get_s()
 {
@@ -581,15 +595,17 @@ void UI_get_s()
         printf(" Error! There is no observatory %zu in database.\n\n", obs_id);
         return;
     }
-    else if(status == 1)
+    else if(status == 0)
     {
         printf(" There is no telescope %zu at observatory %zu.\n\n", tel_id, obs_id);
         return;
     }
+    printf("-----------------------------------\n");
     printf(" TELESCOPE %zu AT OBSERVATORY %zu INFO:\n", tel_id, obs_id);
     printf(" Name: %s\n", tel_struct.name);
     printf(" Diameter: %f\n", tel_struct.diameter);
-    printf(" Focal length: %f\n\n", tel_struct.focal_length);
+    printf(" Focal length: %f\n", tel_struct.focal_length);
+    printf("-----------------------------------\n\n");
 }
 void UI_del_m()
 {
@@ -612,7 +628,7 @@ void UI_del_m()
 }
 void UI_del_s()
 {
-    size_t obs_id, tel_id, tel_index;
+    size_t obs_id, tel_id;
     printf(" -- Enter observatory ID >> ");
     while(!get_size_t(&obs_id))
     {
@@ -631,7 +647,7 @@ void UI_del_s()
         printf(" Error! There is no observatory %zu in database.\n\n", obs_id);
         return;
     }
-    else if(status == 1)
+    else if(status == 0)
     {
         printf(" Error! There is no telescope %zu at observatory %zu.\n\n", tel_id, obs_id);
         return;
@@ -713,7 +729,7 @@ void UI_insert_m()
 void UI_insert_s()
 {
     int c;
-    size_t obs_id, obs_index, tel_index;
+    size_t obs_id, obs_index, index_index;
     struct observatory obs_struct;
     struct telescope tel_struct;
     //-----------------------------------------------------------------------------------//
@@ -761,7 +777,7 @@ void UI_insert_s()
     }
     //-----------------------------------------------------------------------------------//
     // проверка на существование обсерватории
-    if(!get_m(obs_id, &obs_index, &obs_struct))
+    if(!get_m(obs_id, &obs_index, &index_index, &obs_struct))
     {
         printf(" Error! There is no observatory %zu in database.\n\n", obs_id);
         return;
@@ -774,7 +790,7 @@ void UI_insert_s()
 void UI_update_m()
 {
     int c;
-    size_t obs_id, obs_index;
+    size_t obs_id, obs_index, index_index;
     printf(" -- Enter observatory ID >> ");
     while(!get_size_t(&obs_id))
     {
@@ -782,7 +798,7 @@ void UI_update_m()
         printf(" -- Enter observatory ID >> ");
     }
     struct observatory obs_struct;
-    if(!get_m(obs_id, &obs_index, &obs_struct))
+    if(!get_m(obs_id, &obs_index, &index_index, &obs_struct))
     {
         printf(" Error! There is no observatory %zu in database.\n\n", obs_id);
         return;
@@ -869,7 +885,7 @@ void UI_update_s()
         printf(" Error! There is no observatory %zu in database.\n\n", obs_id);
         return;
     }
-    else if(status == 1)
+    else if(status == 0)
     {
         printf(" Error! There is no telescope %zu at observatory %zu.\n\n", tel_id, obs_id);
         return;
