@@ -483,8 +483,8 @@ void show_m()
         if(curr_index.is_removed) continue;
         fseek(obs_file, (long)(curr_index.index*sizeof(struct observatory)), SEEK_SET);
         fread(&curr_obs, sizeof(struct observatory), 1, obs_file);
-        printf("|%10zu|%40.40s|%10.4f|%11.4f|%10.1f|%12zu|%i\n",
-               curr_obs.id, curr_obs.name, curr_obs.latitude, curr_obs.longitude, curr_obs.altitude, curr_obs.telescopes, curr_obs.is_removed);
+        printf("|%10zu|%40.40s|%10.4f|%11.4f|%10.1f|%12zu|\n",
+               curr_obs.id, curr_obs.name, curr_obs.latitude, curr_obs.longitude, curr_obs.altitude, curr_obs.telescopes);
     }
     printf("+----------+----------------------------------------+----------+-----------+----------+------------+\n");
     fclose(obs_file);
@@ -506,7 +506,7 @@ void show_s(size_t id)
     struct telescope curr_tel;
     size_t tel_index = obs_struct.telescope_index;
     printf(" Observatory:      %-10zu\n", id);
-    printf(" Total telescopes: %-10zu\n", id);
+    printf(" Total telescopes: %-10zu\n", obs_struct.telescopes);
     printf("+----------+----------------------------------------+----------+--------------+\n");
     printf("|    ID    |                  Name                  | Diameter | Focal length |\n");
     printf("+----------+----------------------------------------+----------+--------------+\n");
